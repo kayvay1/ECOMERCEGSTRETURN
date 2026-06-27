@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>About · Privacy · Terms — Meeso/Flipkart → GSTR-1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   TOKENS — matched to the converter app's palette
+   ============================================================ */
+:root{
+  --void: #0B0A1F;
+  --void-2: #110F2E;
+  --violet: #8B5CF6;
+  --pink: #F0599B;
+  --cyan: #4DEFE0;
+  --lime: #C8FF4D;
+  --glass-bg: rgba(255,255,255,0.06);
+  --glass-bg-strong: rgba(255,255,255,0.10);
+  --glass-border: rgba(255,255,255,0.14);
+  --glass-border-strong: rgba(255,255,255,0.24);
+  --text-hi: #F5F3FF;
+  --text-mid: rgba(245,243,255,0.72);
+  --text-low: rgba(245,243,255,0.46);
+  --danger: #FF6B6B;
+  --ok: #4DEFE0;
+  --radius-lg: 28px;
+  --radius-md: 18px;
+  --radius-sm: 12px;
+  --shadow-card: 0 20px 60px -20px rgba(0,0,0,0.6), 0 1px 0 rgba(255,255,255,0.08) inset;
+  --ease: cubic-bezier(.16,1,.3,1);
+}
+
+*{ box-sizing: border-box; }
+html,body{ margin:0; padding:0; }
+
+body{
+  min-height: 100vh;
+  background: var(--void);
+  color: var(--text-hi);
+  font-family: 'Inter', -apple-system, sans-serif;
+  overflow-x: hidden;
+  position: relative;
+}
+
+::selection{ background: var(--violet); color: white; }
+
+/* ============================================================
+   AMBIENT BACKGROUND
+   ============================================================ */
+.bg-mesh{
+  position: fixed; inset: 0; z-index: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 15% 0%, rgba(139,92,246,0.32), transparent 60%),
+    radial-gradient(ellipse 70% 60% at 100% 20%, rgba(240,89,155,0.25), transparent 60%),
+    radial-gradient(ellipse 60% 50% at 50% 100%, rgba(77,239,224,0.16), transparent 60%),
+    var(--void);
+  overflow: hidden;
+}
+.orb{ position:absolute; border-radius:50%; filter: blur(60px); opacity:0.5; will-change: transform; }
+.orb-1{ width:480px; height:480px; background: radial-gradient(circle, var(--violet), transparent 70%); top:-120px; left:-100px; animation: float1 24s ease-in-out infinite; }
+.orb-2{ width:420px; height:420px; background: radial-gradient(circle, var(--pink), transparent 70%); top:30%; right:-140px; animation: float2 28s ease-in-out infinite; }
+.orb-3{ width:360px; height:360px; background: radial-gradient(circle, var(--cyan), transparent 70%); bottom:-120px; left:30%; animation: float3 22s ease-in-out infinite; }
+@keyframes float1{ 0%,100%{transform:translate(0,0) scale(1);} 50%{transform:translate(60px,40px) scale(1.1);} }
+@keyframes float2{ 0%,100%{transform:translate(0,0) scale(1);} 50%{transform:translate(-50px,60px) scale(0.95);} }
+@keyframes float3{ 0%,100%{transform:translate(0,0) scale(1);} 50%{transform:translate(40px,-50px) scale(1.05);} }
+@media (prefers-reduced-motion: reduce){ .orb{ animation: none; } }
+
+/* ============================================================
+   SHELL
+   ============================================================ */
+.app-shell{
+  position: relative; z-index: 1;
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 28px 24px 80px;
+}
+
+.topbar{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 36px;
+}
+.brand{ display:flex; align-items:center; gap:12px; text-decoration:none; color:inherit; }
+.brand-mark{
+  font-size: 28px;
+  width: 44px; height: 44px;
+  display:flex; align-items:center; justify-content:center;
+  background: linear-gradient(135deg, var(--violet), var(--pink));
+  border-radius: var(--radius-sm);
+  box-shadow: 0 8px 24px -8px rgba(139,92,246,0.6);
+  flex-shrink: 0;
+}
+.brand-text{ display:flex; flex-direction:column; line-height:1.15; }
+.brand-title{ font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:20px; letter-spacing:-0.02em; }
+.brand-title .accent{
+  background: linear-gradient(90deg, var(--violet), var(--pink), var(--cyan));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.brand-sub{ font-size:12px; color: var(--text-low); font-family:'JetBrains Mono', monospace; }
+
+.back-link{
+  display:flex; align-items:center; gap:8px;
+  font-size: 13px; font-weight:600;
+  color: var(--text-mid);
+  text-decoration:none;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  padding: 9px 16px;
+  border-radius: 999px;
+  backdrop-filter: blur(12px);
+  transition: all 0.2s var(--ease);
+}
+.back-link:hover{ color: var(--text-hi); border-color: var(--glass-border-strong); }
+
+/* ============================================================
+   HERO
+   ============================================================ */
+.hero{ margin-bottom: 36px; }
+.hero-eyebrow{
+  font-family:'JetBrains Mono', monospace;
+  font-size: 11px; letter-spacing:0.08em; text-transform:uppercase;
+  color: var(--cyan);
+  margin-bottom: 12px;
+}
+.hero-title{
+  font-family:'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: clamp(28px, 4vw, 42px);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  margin: 0 0 14px;
+}
+.hero-sub{
+  color: var(--text-mid);
+  font-size: 15px;
+  line-height: 1.6;
+  max-width: 600px;
+}
+
+/* ============================================================
+   TABS
+   ============================================================ */
+.tab-nav{
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  padding: 6px;
+  backdrop-filter: blur(20px);
+}
+.tab-nav button{
+  flex: 1;
+  min-width: 120px;
+  background: transparent;
+  border: none;
+  color: var(--text-mid);
+  padding: 12px 18px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.2s var(--ease);
+}
+.tab-nav button:hover{ color: var(--text-hi); background: rgba(255,255,255,0.05); }
+.tab-nav button.is-active{
+  background: linear-gradient(135deg, rgba(139,92,246,0.3), rgba(240,89,155,0.22));
+  color: var(--text-hi);
+  box-shadow: 0 8px 24px -10px rgba(139,92,246,0.5);
+}
+
+/* ============================================================
+   GLASS CARD / CONTENT
+   ============================================================ */
+.glass-card{
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  padding: 40px;
+  backdrop-filter: blur(24px) saturate(140%);
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+  box-shadow: var(--shadow-card);
+  display: none;
+  animation: cardIn 0.4s var(--ease);
+}
+.glass-card.is-active{ display: block; }
+@keyframes cardIn{ from{opacity:0; transform: translateY(10px);} to{opacity:1; transform: translateY(0);} }
+
+@media (max-width: 600px){
+  .glass-card{ padding: 26px 22px; }
+}
+
+.doc-eyebrow{
+  font-family:'JetBrains Mono', monospace;
+  font-size: 11px; letter-spacing:0.08em; text-transform:uppercase;
+  color: var(--pink);
+  margin-bottom: 10px;
+}
+.doc-title{
+  font-family:'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: clamp(24px, 3vw, 30px);
+  letter-spacing: -0.02em;
+  margin: 0 0 8px;
+}
+.doc-updated{
+  font-size: 12px;
+  color: var(--text-low);
+  font-family: 'JetBrains Mono', monospace;
+  margin-bottom: 30px;
+}
+
+.doc-section{ margin-bottom: 30px; }
+.doc-section:last-child{ margin-bottom: 0; }
+.doc-section h3{
+  font-family:'Space Grotesk', sans-serif;
+  font-weight: 600;
+  font-size: 18px;
+  margin: 0 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.doc-section h3 .num{
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  width: 26px; height: 26px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+  color: var(--cyan);
+  flex-shrink: 0;
+}
+.doc-section p{
+  color: var(--text-mid);
+  font-size: 14.5px;
+  line-height: 1.7;
+  margin: 0 0 12px;
+}
+.doc-section ul{
+  margin: 0 0 12px;
+  padding-left: 20px;
+  color: var(--text-mid);
+  font-size: 14.5px;
+  line-height: 1.7;
+}
+.doc-section li{ margin-bottom: 6px; }
+.doc-section code{
+  background: rgba(255,255,255,0.1);
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--lime);
+}
+.doc-section strong{ color: var(--text-hi); }
+
+.callout{
+  border-radius: var(--radius-sm);
+  padding: 16px 18px;
+  font-size: 13.5px;
+  line-height: 1.6;
+  margin: 16px 0;
+  border: 1px solid;
+}
+.callout-ok{
+  background: rgba(77,239,224,0.08);
+  border-color: rgba(77,239,224,0.3);
+  color: #c9fff8;
+}
+.callout-warn{
+  background: rgba(255,107,107,0.08);
+  border-color: rgba(255,107,107,0.3);
+  color: #ffd6d6;
+}
+.callout strong{ color: inherit; }
+
+.platform-pills{
+  display: flex; gap: 10px; flex-wrap: wrap; margin: 4px 0 22px;
+}
+.pill{
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid var(--glass-border);
+  color: var(--text-mid);
+}
+
+.about-grid{
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  margin: 4px 0 28px;
+}
+@media (max-width: 600px){ .about-grid{ grid-template-columns: 1fr; } }
+.about-stat{
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  padding: 16px 18px;
+}
+.about-stat .label{
+  display:block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-low);
+  font-family: 'JetBrains Mono', monospace;
+  margin-bottom: 6px;
+}
+.about-stat .value{
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--text-hi);
+}
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+.foot-note{
+  text-align: center;
+  color: var(--text-low);
+  font-size: 12px;
+  font-family: 'JetBrains Mono', monospace;
+  margin-top: 50px;
+}
+.foot-note a{ color: var(--cyan); text-decoration: none; }
+.foot-note a:hover{ text-decoration: underline; }
+
+button:focus-visible, a:focus-visible{
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+</style>
+</head>
+<body>
+
+<div class="bg-mesh">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+</div>
+
+<div class="app-shell">
+
+  <header class="topbar">
+    <a class="brand" href="index.html">
+      <span class="brand-mark">⌁</span>
+      <div class="brand-text">
+        <span class="brand-title">meeso<span class="accent">.gstr1</span></span>
+        <span class="brand-sub">tcs return → json filer</span>
+      </div>
+    </a>
+    <a class="back-link" href="index.html">← back to the converter</a>
+  </header>
+
+  <section class="hero">
+    <div class="hero-eyebrow">legal · info</div>
+    <h1 class="hero-title">About, Privacy &amp; Terms</h1>
+    <p class="hero-sub">Everything about how this tool works, what happens to your data (short answer: nothing leaves your browser), and the terms you're agreeing to by using it.</p>
+  </section>
+
+  <nav class="tab-nav" id="tabNav">
+    <button class="is-active" data-tab="about">About</button>
+    <button data-tab="privacy">Privacy Policy</button>
+    <button data-tab="terms">Terms &amp; Conditions</button>
+  </nav>
+
+  <!-- ================= ABOUT ================= -->
+  <article class="glass-card is-active" data-panel="about">
+    <div class="doc-eyebrow">what this is</div>
+    <h2 class="doc-title">About this tool</h2>
+    <p class="doc-updated">Last updated · June 2026</p>
+
+    <div class="platform-pills">
+      <span class="pill">🛍️ Meeso</span>
+      <span class="pill">📦 Flipkart</span>
+      <span class="pill">📮 Amazon (coming soon)</span>
+    </div>
+
+    <div class="doc-section">
+      <h3><span class="num">01</span> What it does</h3>
+      <p>This is a free browser-based utility that converts the seller-reports you download from e-commerce marketplaces — Meeso's TCS sales/return files, Flipkart's GSTR-1 &amp; GSTR-8 export — into a single, properly formatted <strong>GSTR-1 JSON</strong> file, ready to upload on the GST portal under <strong>Returns → Prepare Offline → Upload</strong>.</p>
+      <p>It handles the boring, error-prone parts by hand: mapping state names to POS codes, splitting tax into IGST vs CGST+SGST based on your home state, netting sales against returns, merging multiple marketplaces into one set of B2CS and HSN entries without creating portal-rejected duplicates, and building the <code>supeco</code> and <code>doc_issue</code> blocks the portal expects.</p>
+    </div>
+
+    <div class="doc-section">
+      <h3><span class="num">02</span> Who it's for</h3>
+      <p>Small and medium sellers (and the accountants/CAs who file for them) who sell through Meeso, Flipkart, or similar marketplaces and currently build their GSTR-1 by hand in Excel every month or quarter.</p>
+    </div>
+
+    <div class="about-grid">
+      <div class="about-stat"><span class="label">Runs</span><span class="value">100% in your browser</span></div>
+      <div class="about-stat"><span class="label">Server uploads</span><span class="value">None — zero</span></div>
+      <div class="about-stat"><span class="label">Cost</span><span class="value">Free</span></div>
+      <div class="about-stat"><span class="label">Account needed</span><span class="value">No</span></div>
+    </div>
+
+    <div class="doc-section">
+      <h3><span class="num">03</span> How it works, technically</h3>
+      <p>The whole app is plain HTML, CSS, and JavaScript. When you upload an Excel file, your browser reads it locally using a JavaScript spreadsheet library — the file is never transmitted anywhere. The conversion math runs entirely on your device, and the final JSON is generated and downloaded directly to your computer.</p>
+    </div>
+
+    <div class="doc-section">
+      <h3><span class="num">04</span> Not affiliated</h3>
+      <p>This tool is an independent utility and is not affiliated with, endorsed by, or officially connected to Meeso, Flipkart, Amazon, or the Goods and Services Tax Network (GSTN) / GST portal. All trademarks belong to their respective owners.</p>
+    </div>
+  </article>
+
+  <!-- ================= PRIVACY ================= -->
+  <article class="glass-card" data-panel="privacy">
+    <div class="doc-eyebrow">your data, your device</div>
+    <h2 class="doc-title">Privacy Policy</h2>
+    <p class="doc-updated">Last updated · June 2026</p>
+
+    <div class="callout callout-ok">
+      <strong>Short version:</strong> nothing you upload ever leaves your browser. There's no server, no database, no analytics tracking your files, no account, and no copy kept anywhere by us.
+    </div>
+
+    <div class="doc-section">
+      <h3><span class="num">01</span> What this tool does <em>not</em> do</h3>
+      <ul>
+        <li>It does not upload your Excel files, GSTIN, or generated JSON to any server.</li>
+        <li>It does not store your data after you close or refresh the tab.</li>
+        <li>It does not use cookies, third-party analytics, or advertising trackers.</li>
+        <li>It does not require you to sign in, register, or provide an email address.</li>
+      </ul>
+    </div>
+
+    <div class="doc-section">
+      <h3><span class="num">02</span> How your data is actually processed</h3>
+      <p>All file parsing, calculations, and JSON generation happen client-side using JavaScript running in your own browser. When you select or drag a file, it is read directly from your device's memory into the page — the bytes never travel over the network. Closing the tab clears everything; there is nothing to delete because nothing was ever stored externally.</p>
+    </div>
+
+    <div class="doc-section">
+      <h3><span class="num">03</span> Fonts and external resources</h3>
+      <p>The page loads two things from the internet: web fonts from Google Fonts and a spreadsheet-parsing script (SheetJS) from a public code CDN, both purely to render the page and read Excel files. Your business data is never sent to either of these.</p>
+    </div>
+
+    <div class="doc-section">
+      <h3><span class="num">04</span> Your responsibility</h3>
+      <p>Because everything runs locally, you are responsible for the security of the device and browser you use this tool on, and for keeping your downloaded GSTR-1 JSON and source Excel files safe afterward.</p>
+    </div>
+
+    <div class="doc-section">
+      <h3><span class="num">05</span> Changes to this policy</h3>
+      <p>If this tool ever changes to involve a server or any form of data collection, this page will be updated to reflect that clearly before the change takes effect.</p>
+    </div>
+  </article>
+
+  <!-- ================= TERMS ================= -->
+  <article class="glass-card" data-panel="terms">
+    <div class="doc-eyebrow">please read before filing</div>
+    <h2 class="doc-title">Terms &amp; Conditions</h2>
+    <p class="doc-updated">Last updated · June 2026</p>
+
+    <div class="callout callout-warn">
+      <strong>This tool is a calculation aid, not a tax advisor.</strong> It does not replace a qualified Chartered Accountant or tax professional. Always review the generated JSON before uploading it to the GST portal.
+    </div>
+
+    <div class="doc-section">
+      <h3><span class="num">01</span> Acceptance of terms</h3>
+      <p>By using this tool, you agree to these terms. If you don't agree, please don't use it.</p>
+    </div>
+
+    <div class="doc-section">
+      <h3><span class="num">02</span> No warranty</h3>
+      <p>This tool is provided <strong>"as is"</strong> and <strong>"as available,"</strong> without any warranty of any kind, express or implied — including, without limitation, accuracy, completeness, fitness for a particular purpose, or compliance with current GST law or portal schema requirements. GST rules, rates, formats, and the portal's expected JSON schema can change at any time; this tool may not always reflect the latest version.</p>
+    </div>
+
+    <div class="doc-section">
+      <h3><span class="num">03</span> Your responsibility before filing</h3>
+      <ul>
+        <li>Verify that your uploaded Excel files are complete, correct, and for the right period before conversion.</li>
+        <li>Review every number in the B2CS, HSN, document issue, and TCS sections shown on the Review screen before downloading.</li>
+        <li>Confirm the generated JSON against your own books of accounts before uploading it to the GST portal.</li>
+        <li>Consult a qualified CA or tax professional if you're unsure about any figure, classification, or filing requirement.</li>
+      </ul>
+    </div>
+
+    <div class="doc-section">
+      <h3><span class="num">04</span> Limitation of liability</h3>
+      <p>To the fullest extent permitted by law, the creator(s) of this tool are not liable for any direct, indirect, incidental, or consequential loss or damage — including penalties, interest, notices, or incorrect filings — arising from the use of, or inability to use, this tool, or from reliance on any output it generates.</p>
+    </div>
+
+    <div class="doc-section">
+      <h3><span class="num">05</span> No professional relationship</h3>
+      <p>Using this tool does not create any advisor-client, accountant-client, or professional relationship between you and its creator(s).</p>
+    </div>
+
+    <div class="doc-section">
+      <h3><span class="num">06</span> Trademarks</h3>
+      <p>Meeso, Flipkart, Amazon, GST, GSTN, and any other product or company names mentioned are trademarks of their respective owners. Mentioning them here is only to describe file compatibility, and does not imply any partnership or endorsement.</p>
+    </div>
+
+    <div class="doc-section">
+      <h3><span class="num">07</span> Changes to these terms</h3>
+      <p>These terms may be updated as the tool evolves. Continued use after an update means you accept the revised terms.</p>
+    </div>
+  </article>
+
+  <p class="foot-note">built for sellers tired of doing this by hand · <a href="index.html">back to the converter →</a></p>
+</div>
+
+<script>
+(function(){
+  var buttons = document.querySelectorAll('#tabNav button');
+  var panels = document.querySelectorAll('.glass-card');
+
+  function activate(tab){
+    buttons.forEach(function(b){ b.classList.toggle('is-active', b.dataset.tab === tab); });
+    panels.forEach(function(p){ p.classList.toggle('is-active', p.dataset.panel === tab); });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (history.replaceState) history.replaceState(null, '', '#' + tab);
+  }
+
+  buttons.forEach(function(btn){
+    btn.addEventListener('click', function(){ activate(btn.dataset.tab); });
+  });
+
+  var initial = (location.hash || '').replace('#', '');
+  if (['about','privacy','terms'].indexOf(initial) !== -1){
+    activate(initial);
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meeso → GSTR-1 ⚡ Converter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="bg-mesh">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+  <div class="grain"></div>
+</div>
+
+<div class="app-shell">
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">⌁</span>
+      <div class="brand-text">
+        <span class="brand-title">meeso<span class="accent">.gstr1</span></span>
+        <span class="brand-sub">tcs return → json filer</span>
+      </div>
+    </div>
+    <div class="topbar-pill" id="liveStatus">
+      <span class="dot"></span> all client-side · nothing leaves your browser
+    </div>
+  </header>
+
+  <main class="stage">
+
+    <!-- ============ PROGRESS RAIL ============ -->
+    <nav class="rail" id="rail" aria-label="Steps">
+      <button class="rail-step is-active" data-step="1">
+        <span class="rail-num">01</span><span class="rail-label">Identity</span>
+      </button>
+      <button class="rail-step" data-step="2">
+        <span class="rail-num">02</span><span class="rail-label">Period</span>
+      </button>
+      <button class="rail-step" data-step="3">
+        <span class="rail-num">03</span><span class="rail-label">Upload</span>
+      </button>
+      <button class="rail-step" data-step="4">
+        <span class="rail-num">04</span><span class="rail-label">Review</span>
+      </button>
+    </nav>
+
+    <!-- ============ PANEL: STEP CONTENT ============ -->
+    <section class="panel-zone">
+
+      <!-- STEP 1 — GSTIN -->
+      <div class="glass-card step-card is-active" data-step-panel="1">
+        <div class="card-eyebrow">step 01 · who's filing</div>
+        <h1 class="card-title">Drop your GSTIN</h1>
+        <p class="card-sub">This goes straight into the <code>gstin</code> field of your return. We also read its first two digits to detect your home state, so intra-state sales get taxed CGST+SGST automatically.</p>
+
+        <div class="field">
+          <label for="gstinInput">GSTIN</label>
+          <input type="text" id="gstinInput" maxlength="15" placeholder="24AAAAA0000A1Z5" autocomplete="off" spellcheck="false">
+          <span class="field-hint" id="gstinHint">15 characters · first 2 digits = state code</span>
+        </div>
+
+        <div class="card-actions">
+          <button class="btn btn-primary" id="toStep2">Next: pick period →</button>
+        </div>
+      </div>
+
+      <!-- STEP 2 — PERIOD -->
+      <div class="glass-card step-card" data-step-panel="2">
+        <div class="card-eyebrow">step 02 · filing period</div>
+        <h1 class="card-title">Monthly or quarterly?</h1>
+        <p class="card-sub">Monthly returns need one month's data. Quarterly (QRMP) returns bundle three months — Apr–Jun is Q1, all the way to Jan–Mar as Q4.</p>
+
+        <div class="toggle-row">
+          <button class="toggle-btn is-active" data-period-type="monthly">Monthly return</button>
+          <button class="toggle-btn" data-period-type="quarterly">Quarterly return (QRMP)</button>
+        </div>
+
+        <div class="field" id="monthlyPicker">
+          <label for="monthInput">Filing month</label>
+          <input type="month" id="monthInput">
+          <!-- <span class="calendar-icon">
+            <img src="calendar.svg" width="20">
+          </span> -->
+          <span class="field-hint">Maps to GSTR-1 <code>fp</code> as MMYYYY</span>
+        </div>
+
+        <div class="field is-hidden" id="quarterlyPicker">
+          <label for="quarterSelect">Quarter</label>
+          <select id="quarterSelect">
+            <option value="">Select a quarter…</option>
+            <option value="Q1">Q1 · April – June</option>
+            <option value="Q2">Q2 · July – September</option>
+            <option value="Q3">Q3 · October – December</option>
+            <option value="Q4">Q4 · January – March</option>
+          </select>
+          <label for="quarterYearInput" class="mt">Financial year</label>
+          <input type="number" id="quarterYearInput" placeholder="e.g. 2026 (for Apr 2026–Mar 2027 enter 2026)" min="2017" max="2099">
+          <span class="field-hint">The <code>fp</code> filed is the quarter's <strong>last month</strong>, e.g. Q1 FY2026 → 062026</span>
+        </div>
+
+        <div class="card-actions">
+          <button class="btn btn-ghost" data-back="1">← back</button>
+          <button class="btn btn-primary" id="toStep3">Next: upload files →</button>
+        </div>
+      </div>
+
+      <!-- STEP 3 — UPLOAD -->
+      <div class="glass-card step-card" data-step-panel="3">
+        <div class="card-eyebrow">step 03 · the actual data</div>
+        <h1 class="card-title">Which platforms are you filing for?</h1>
+        <p class="card-sub">Pick every marketplace you sold on this period. We'll open the right upload boxes for each — and if you pick more than one, we automatically merge them into one clean GSTR-1 (no duplicate POS or HSN rows, like the portal requires).</p>
+
+        <div class="platform-grid" id="platformGrid">
+          <button class="platform-card" data-platform="meeso">
+            <span class="platform-check">✓</span>
+            <span class="platform-icon">🛍️</span>
+            <span class="platform-name">Meeso</span>
+            <span class="platform-sub">Sales + Sales Return</span>
+          </button>
+          <button class="platform-card" data-platform="flipkart">
+            <span class="platform-check">✓</span>
+            <span class="platform-icon">📦</span>
+            <span class="platform-name">Flipkart</span>
+            <span class="platform-sub">GSTR-1 / GSTR-8 export</span>
+          </button>
+          <button class="platform-card is-disabled" data-platform="amazon" disabled>
+            <span class="platform-check">✓</span>
+            <span class="platform-icon">📮</span>
+            <span class="platform-name">Amazon</span>
+            <span class="platform-sub">Coming soon</span>
+          </button>
+        </div>
+
+        <div id="uploadInstructionsWrap" class="is-hidden">
+          <p class="card-sub" id="uploadInstructions"></p>
+          <div class="upload-groups" id="uploadGroups"><!-- injected per platform/month --></div>
+        </div>
+
+        <div class="card-actions">
+          <button class="btn btn-ghost" data-back="2">← back</button>
+          <button class="btn btn-primary" id="toStep4" disabled>Generate GSTR-1 →</button>
+        </div>
+      </div>
+
+      <!-- STEP 4 — REVIEW -->
+      <div class="glass-card step-card wide" data-step-panel="4">
+        <div class="card-eyebrow">step 04 · ready to file</div>
+        <h1 class="card-title">Your GSTR-1 JSON is ready</h1>
+        <p class="card-sub">Sanity-check the numbers below, then download. Upload the file directly under <strong>Returns → Prepare Offline → Upload</strong> on the GST portal.</p>
+
+        <div class="stat-grid" id="statGrid"><!-- injected --></div>
+
+        <div class="warnings" id="warningsBox" style="display:none;"></div>
+
+        <div class="tabs">
+          <button class="tab-btn is-active" data-tab="b2cs">B2CS · by state</button>
+          <button class="tab-btn" data-tab="hsn">HSN summary</button>
+          <button class="tab-btn" data-tab="json">Raw JSON</button>
+        </div>
+
+        <div class="tab-panel is-active" data-tab-panel="b2cs">
+          <div class="table-wrap"><table id="b2csTable"></table></div>
+        </div>
+        <div class="tab-panel" data-tab-panel="hsn">
+          <div class="table-wrap"><table id="hsnTable"></table></div>
+        </div>
+        <div class="tab-panel" data-tab-panel="json">
+          <pre class="json-view" id="jsonView"></pre>
+        </div>
+
+        <div class="card-actions">
+          <button class="btn btn-ghost" data-back="3">← back</button>
+          <button class="btn btn-secondary" id="copyJsonBtn">Copy JSON</button>
+          <button class="btn btn-primary" id="downloadJsonBtn">⬇ Download gstr1.json</button>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <footer class="foot-note">
+    built for sellers tired of doing this by hand · runs 100% in your browser, no server, no upload · <a href="policy.html" style="color:var(--cyan);text-decoration:none;">about · privacy · terms</a>
+  </footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="engine.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
