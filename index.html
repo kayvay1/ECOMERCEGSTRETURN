@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Meeso → GSTR-1 ⚡ Converter</title>
+<title>Meeso / Flipkart / Amazon → GSTR-1 ⚡ Converter</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
@@ -23,12 +23,13 @@
     <div class="brand">
       <span class="brand-mark">⌁</span>
       <div class="brand-text">
-        <span class="brand-title">meeso<span class="accent">.gstr1</span></span>
-        <span class="brand-sub">tcs return → json filer</span>
+        <span class="brand-title">Eco<span class="accent">.GSTR-1</span></span>
+        <span class="brand-sub">Excel Report → json filer</span>
       </div>
     </div>
     <div class="topbar-pill" id="liveStatus">
-      <span class="dot"></span> all client-side · nothing leaves your browser
+      <span class="dot"></span> all client-side · nothing leaves your browser :
+      <span id="showgstnumber">  YOUR GSTIN </span> 
     </div>
   </header>
 
@@ -55,7 +56,7 @@
 
       <!-- STEP 1 — GSTIN -->
       <div class="glass-card step-card is-active" data-step-panel="1">
-        <div class="card-eyebrow">step 01 · who's filing</div>
+        <div class="card-eyebrow">step 01 · who's filing </div>
         <h1 class="card-title">Drop your GSTIN</h1>
         <p class="card-sub">This goes straight into the <code>gstin</code> field of your return. We also read its first two digits to detect your home state, so intra-state sales get taxed CGST+SGST automatically.</p>
 
@@ -84,9 +85,6 @@
         <div class="field" id="monthlyPicker">
           <label for="monthInput">Filing month</label>
           <input type="month" id="monthInput">
-          <!-- <span class="calendar-icon">
-            <img src="calendar.svg" width="20">
-          </span> -->
           <span class="field-hint">Maps to GSTR-1 <code>fp</code> as MMYYYY</span>
         </div>
 
@@ -129,11 +127,11 @@
             <span class="platform-name">Flipkart</span>
             <span class="platform-sub">GSTR-1 / GSTR-8 export</span>
           </button>
-          <button class="platform-card is-disabled" data-platform="amazon" disabled>
+          <button class="platform-card" data-platform="amazon">
             <span class="platform-check">✓</span>
             <span class="platform-icon">📮</span>
             <span class="platform-name">Amazon</span>
-            <span class="platform-sub">Coming soon</span>
+            <span class="platform-sub">GSTR-1 Ready-to-File export</span>
           </button>
         </div>
 

@@ -34,7 +34,7 @@ const STATE_CODE_MAP = {
   'MADHYA PRADESH': '23',
   'GUJARAT': '24',
   'DAMAN AND DIU': '25',
-  'DAMAN': '26', 'THE DADRA AND NAGAR HAVELI AND DAMAN AND DIU': '26', 'DADRA & NAGAR HAVELI AND DAMAN & DIU': '26',
+  'DAMAN': '26', 'THE DADRA AND NAGAR HAVELI AND DAMAN AND DIU': '26', 'DADRA & NAGAR HAVELI AND DAMAN & DIU': '26', 'DADRA AND NAGAR HAVELI': '26',
   'MAHARASHTRA': '27',
   'KARNATAKA': '29',
   'GOA': '30',
@@ -53,7 +53,8 @@ const STATE_CODE_MAP = {
 // Known e-commerce operator GSTINs, used as a fallback if a file doesn't carry its own.
 const PLATFORM_ETIN = {
   meeso: '24AARCM9332R1CU',
-  flipkart: '24AACCF0683K1ZN'
+  flipkart: '24AACCF0683K1ZN',
+  amazon: '24AAICA3918J1CZ'
 };
 
 function homeStateFromGSTIN(gstin) {
@@ -189,10 +190,20 @@ function parseFlipkart(sheets, homeState) {
   const docRows = sheets['Section 13 in GSTR-1'] || [];
   const supecoRows = sheets['Section 3 in GSTR-8'] || [];
 
+  // Helper: true only for actual data rows, not re-appearing header rows
+  // When 3 monthly files are concatenated, each file's header row appears as a
+  // "data row" — we filter them out by checking the GSTIN field is a real GSTIN
+  // (15 alphanumeric chars) and NOT the literal string "GSTIN".
+  const isDataRow = (r) => {
+    const g = getCol(r, 'GSTIN');
+    if (!g) return false;
+    const s = String(g).trim();
+    if (s.toUpperCase() === 'GSTIN') return false; // it's a repeated header row
+    return s.length > 0;
+  };
+
   // --- 7(B)(2): inter-state, has its own PoS column ---
-  interRows.forEach(r => {
-    const gstin = getCol(r, 'GSTIN');
-    if (!gstin) return; // skip blank trailer rows
+  interRows.filter(isDataRow).forEach(r => {
     const taxval = numOr0(getCol(r, 'Aggregate Taxable Value Rs.'));
     const rate = numOr0(getCol(r, 'IGST %'));
     const stateName = getCol(r, 'Delivered State (PoS)');
@@ -206,9 +217,7 @@ function parseFlipkart(sheets, homeState) {
   });
 
   // --- 7(A)(2): intra-state, no PoS column — it's the supplier's home state by definition ---
-  intraRows.forEach(r => {
-    const gstin = getCol(r, 'GSTIN');
-    if (!gstin) return;
+  intraRows.filter(isDataRow).forEach(r => {
     const taxval = numOr0(getCol(r, 'Aggregate Taxable Value Rs.'));
     const cgstRate = numOr0(getCol(r, 'CGST %'));
     const rate = round2(cgstRate * 2); // GST rate = CGST% + SGST% (always equal halves)
@@ -220,48 +229,55 @@ function parseFlipkart(sheets, homeState) {
     b2csRows.push({ pos: homeState, rate, taxval });
   });
 
-  // --- Section 12: HSN summary, already merged with igst/cgst/sgst split ---
-  hsnSheetRows.forEach(r => {
-    const gstin = getCol(r, 'GSTIN');
-    if (!gstin) return;
+  // --- Section 12: HSN summary ---
+  // For quarterly filing, 3 months of HSN rows are concatenated — each month's
+  // row for the same HSN must be summed, not treated as separate entries.
+  hsnSheetRows.filter(isDataRow).forEach(r => {
     const hsn = String(getCol(r, 'HSN Number') ?? '').trim();
+    if (!hsn) return;
     const qty = numOr0(getCol(r, 'Total Quantity in Nos.'));
     const taxval = numOr0(getCol(r, 'Total Taxable Value Rs.'));
     const igst = numOr0(getCol(r, 'IGST Amount Rs.'));
     const cgst = numOr0(getCol(r, 'CGST Amount Rs.'));
     const sgst = numOr0(getCol(r, 'SGST Amount Rs.'));
-    if (!hsn) return;
-    // Flipkart's HSN sheet gives pre-computed tax amounts directly, so we carry
-    // those rather than re-deriving from a rate (avoids rounding drift).
+    // Push each month row individually — the hsnBuckets merge in mergePlatforms
+    // will sum them all into one entry per HSN, so no duplicates reach the portal.
     hsnRows.push({ hsn, qty, taxval, presetTax: { igst, cgst, sgst } });
   });
 
   // --- Section 13: invoice series / doc issue ---
+  // Quarterly = 3 monthly files → 3 rows. Sum totnum/cancel/net_issue across all
+  // months; use first month's "from" and last month's "to" as the series range.
+  const docDataRows = docRows.filter(isDataRow);
   let docIssue = null;
-  const docRow = docRows.find(r => getCol(r, 'GSTIN'));
-  if (docRow) {
+  if (docDataRows.length > 0) {
+    const totalNum = docDataRows.reduce((s, r) => s + numOr0(getCol(r, 'Total Number of Invoices')), 0);
+    const totalCancel = docDataRows.reduce((s, r) => s + numOr0(getCol(r, 'Cancelled if any')), 0);
+    const totalNet = docDataRows.reduce((s, r) => s + numOr0(getCol(r, 'Net invoices Issued')), 0);
     docIssue = {
-      from: String(getCol(docRow, 'Invoice Series From') ?? ''),
-      to: String(getCol(docRow, 'Invoice Series To') ?? ''),
-      totnum: numOr0(getCol(docRow, 'Total Number of Invoices')),
-      cancel: numOr0(getCol(docRow, 'Cancelled if any')),
-      netIssue: numOr0(getCol(docRow, 'Net invoices Issued'))
+      from: String(getCol(docDataRows[0], 'Invoice Series From') ?? ''),
+      to: String(getCol(docDataRows[docDataRows.length - 1], 'Invoice Series To') ?? ''),
+      totnum: totalNum,
+      cancel: totalCancel,
+      netIssue: totalNet
     };
   }
 
   // --- Section 3 in GSTR-8: TCS / supeco block ---
+  // Quarterly = 3 monthly rows → SUM all taxable values and tax amounts across months.
   let etin = PLATFORM_ETIN.flipkart;
   let supecoTotals = null;
-  const supecoRow = supecoRows.find(r => getCol(r, 'GSTIN'));
-  if (supecoRow) {
-    const flipkartGstin = getCol(supecoRow, 'GSTIN of Flipkart.Com');
+  const supecoDataRows = supecoRows.filter(isDataRow);
+  if (supecoDataRows.length > 0) {
+    // ETIN (Flipkart's GSTIN) is the same across all months — take from first row
+    const flipkartGstin = getCol(supecoDataRows[0], 'GSTIN of Flipkart.Com');
     if (flipkartGstin) etin = String(flipkartGstin).trim();
     supecoTotals = {
-      suppval: round2(numOr0(getCol(supecoRow, 'Net Taxable Value'))),
-      igst: round2(numOr0(getCol(supecoRow, 'IGST Amount Rs.'))),
-      cgst: round2(numOr0(getCol(supecoRow, 'CGST Amount Rs.'))),
-      sgst: round2(numOr0(getCol(supecoRow, 'SGST Amount Rs.'))),
-      cess: round2(numOr0(getCol(supecoRow, 'Cess Amount Rs.') ?? getCol(supecoRow, 'CESS Amount Rs.')))
+      suppval: round2(supecoDataRows.reduce((s, r) => s + numOr0(getCol(r, 'Net Taxable Value')), 0)),
+      igst:    round2(supecoDataRows.reduce((s, r) => s + numOr0(getCol(r, 'IGST Amount Rs.')), 0)),
+      cgst:    round2(supecoDataRows.reduce((s, r) => s + numOr0(getCol(r, 'CGST Amount Rs.')), 0)),
+      sgst:    round2(supecoDataRows.reduce((s, r) => s + numOr0(getCol(r, 'SGST Amount Rs.')), 0)),
+      cess:    round2(supecoDataRows.reduce((s, r) => s + numOr0(getCol(r, 'Cess Amount Rs.') ?? getCol(r, 'CESS Amount Rs.')), 0))
     };
   }
 
@@ -277,6 +293,112 @@ function parseFlipkart(sheets, homeState) {
     supecoTotals,
     warnings,
     rowCounts: { sales: interRows.length + intraRows.length, returns: 0 }
+  };
+}
+
+/* ============================================================
+   AMAZON PARSER
+   Reads 3 worksheets from the Amazon GSTR-1 Ready-to-File export:
+     "B2C Small"   — B2CS data (row 4 = header, row 5+ = data)
+     "HSN Summary" — HSN data (row 4 = header, row 5+ = data)
+     "B2B"         — B2B invoices (row 4 = header, mostly blank)
+   Key differences from Flipkart:
+     - Rate is in DECIMAL form: 0.05 = 5%, multiply × 100
+     - Place Of Supply format: "29-Karnataka" → first 2 chars = POS code
+     - No separate TCS summary sheet — supeco totals derived from B2CS rows
+     - Header is at row index 3 (0-based), so SheetJS range:3 is used
+   `sheets` param: { sheetName: Array<rowObject> } parsed with range:3
+   ============================================================ */
+function parseAmazon(sheets, homeState) {
+  const warnings = [];
+  const b2csRows = [];
+  const hsnRows = [];
+
+  const b2csData  = sheets['B2C Small']    || [];
+  const hsnData   = sheets['HSN Summary']  || [];
+  const b2bData   = sheets['B2B']          || [];
+
+  // --- Helper: Amazon's Place Of Supply is "XX-StateName" ---
+  // The first 2 characters are directly the GST state code.
+  const amazonPOS = (raw) => {
+    if (!raw) return null;
+    const s = String(raw).trim();
+    if (s.length < 2) return null;
+    const code = s.substring(0, 2);
+    if (/^\d{2}$/.test(code)) return code;
+    return null;
+  };
+
+  // --- Helper: Amazon Rate is decimal (0.05 = 5%) ---
+  const amazonRate = (raw) => round2(numOr0(raw) * 100);
+
+  // --- B2C Small: b2cs rows ---
+  let etin = PLATFORM_ETIN.amazon;
+
+  b2csData.forEach(r => {
+    const posRaw = r['Place Of Supply'];
+    const pos = amazonPOS(posRaw);
+    if (!pos) return; // skip blank/summary rows
+    const rate = amazonRate(r['Rate']);
+    const taxval = numOr0(r['Taxable Value']);
+    if (Math.abs(taxval) < 0.005) return; // skip zero-value rows
+    // Pick up Amazon ETIN from the file itself if present
+    const ecoGstin = r['E-Commerce GSTIN'];
+    if (ecoGstin && String(ecoGstin).length === 15) etin = String(ecoGstin).trim();
+    b2csRows.push({ pos, rate, taxval });
+  });
+
+  // --- HSN Summary: pre-computed IGST/CGST/SGST already split ---
+  hsnData.forEach(r => {
+    const hsn = String(r['HSN'] ?? '').trim();
+    if (!hsn || hsn.toLowerCase() === 'hsn') return; // skip blank/header rows
+    const qty   = numOr0(r['Total Quantity']);
+    const txval = numOr0(r['Taxable Value']);
+    const igst  = numOr0(r['Integrated Tax Amount']);
+    const cgst  = numOr0(r['Central Tax Amount']);
+    const sgst  = numOr0(r['State/UT Tax Amount']);
+    if (Math.abs(txval) < 0.005 && qty === 0) return;
+    hsnRows.push({ hsn, qty, taxval: txval, presetTax: { igst, cgst, sgst } });
+  });
+
+  // --- B2B (optional, mostly blank) ---
+  // Amazon B2B rows have: GSTIN/UIN of Recipient, Place Of Supply, Rate, Taxable Value
+  // These go into b2b section — we add them to b2csRows for now since portal
+  // b2b handling is separate; mark them so future b2b block can be added.
+  const b2bDataRows = b2bData.filter(r => r['GSTIN/UIN of Recipient']);
+  if (b2bDataRows.length > 0) {
+    warnings.push(`Amazon: ${b2bDataRows.length} B2B row(s) found — B2B section is not yet supported and these rows were skipped. Please file B2B entries manually.`);
+  }
+
+  // --- Supeco: derive totals from b2csRows (Amazon has no separate TCS sheet) ---
+  // suppval = sum of all taxable values; IGST/CGST/SGST from HSN sheet totals
+  const suppval = round2(b2csRows.reduce((s, r) => s + r.taxval, 0));
+  const totalIgst = round2(hsnRows.reduce((s, r) => s + (r.presetTax ? r.presetTax.igst : 0), 0));
+  const totalCgst = round2(hsnRows.reduce((s, r) => s + (r.presetTax ? r.presetTax.cgst : 0), 0));
+  const totalSgst = round2(hsnRows.reduce((s, r) => s + (r.presetTax ? r.presetTax.sgst : 0), 0));
+
+  // --- Doc issue: Amazon doesn't give invoice series — use row count as best estimate ---
+  const totalRows = b2csData.filter(r => {
+    const pos = amazonPOS(r['Place Of Supply']);
+    return pos && Math.abs(numOr0(r['Taxable Value'])) >= 0.005;
+  }).length;
+
+  const docIssue = totalRows > 0 ? {
+    from: '1',
+    to: String(totalRows),
+    totnum: totalRows,
+    cancel: 0,
+    netIssue: totalRows
+  } : null;
+
+  return {
+    b2csRows,
+    hsnRows,
+    docIssue,
+    supecoMeta: { etin, platform: 'amazon' },
+    supecoTotals: { suppval, igst: totalIgst, cgst: totalCgst, sgst: totalSgst, cess: 0 },
+    warnings,
+    rowCounts: { sales: b2csData.length + b2bData.length, returns: 0 }
   };
 }
 
@@ -506,7 +628,7 @@ function convertToGSTR1(salesRows, returnRows, meta) {
 }
 
 // New multi-platform entry point.
-// platformsInput: { meeso?: {salesRows, returnRows}, flipkart?: {sheets} }
+// platformsInput: { meeso?: {salesRows, returnRows}, flipkart?: {sheets}, amazon?: {sheets} }
 function convertMultiPlatform(platformsInput, meta) {
   const homeState = homeStateFromGSTIN(meta.gstin);
   const results = [];
@@ -516,6 +638,9 @@ function convertMultiPlatform(platformsInput, meta) {
   }
   if (platformsInput.flipkart) {
     results.push(parseFlipkart(platformsInput.flipkart.sheets || {}, homeState));
+  }
+  if (platformsInput.amazon) {
+    results.push(parseAmazon(platformsInput.amazon.sheets || {}, homeState));
   }
 
   if (results.length === 0) {
@@ -539,6 +664,7 @@ if (typeof module !== 'undefined' && module.exports) {
     convertMultiPlatform,
     parseMeeso,
     parseFlipkart,
+    parseAmazon,
     mergePlatforms,
     STATE_CODE_MAP,
     resolvePOS,

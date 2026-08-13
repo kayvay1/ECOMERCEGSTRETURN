@@ -91,6 +91,7 @@
 
   $('#toStep2').addEventListener('click', () => {
     const v = gstinInput.value.trim();
+    $('#showgstnumber').textContent = v;
     if (v.length !== 15){
       toast('GSTIN must be exactly 15 characters', 'error');
       gstinInput.focus();
@@ -244,6 +245,23 @@
         `;
       }
 
+      if (state.platforms.has('amazon')){
+        const key = `${year}-${month}`;
+        innerHtml += `
+          <div class="platform-section-label"><span class="platform-section-icon">📮</span> Amazon</div>
+          <div class="platform-section-note">Amazon GSTR-1 Ready-to-File export — ek hi workbook jisme B2C Small, HSN Summary aur B2B sheets hoti hain.</div>
+          <div class="dropzone-row">
+            <div class="dropzone" data-key="${key}" data-kind="amazon">
+              <span class="dz-tag">required</span>
+              <span class="dz-icon">📊</span>
+              <span class="dz-label">Amazon GSTR-1 export.xlsx</span>
+              <span class="dz-sub" data-role="filename">drop file or click to browse</span>
+              <input type="file" accept=".xlsx,.xls" data-key="${key}" data-kind="amazon">
+            </div>
+          </div>
+        `;
+      }
+
       monthGroup.innerHTML = innerHtml;
       uploadGroups.appendChild(monthGroup);
     });
@@ -281,6 +299,8 @@
     'Section 3 in GSTR-8'
   ];
 
+  const AMAZON_SHEET_NAMES = ['B2C Small', 'HSN Summary', 'B2B'];
+
   const MEESO_REQUIRED_COLS = ['hsn_code','quantity','gst_rate','total_taxable_sale_value','taxable_shipping','end_customer_state_new'];
 
   function handleFile(file, key, kind, zone){
@@ -301,7 +321,18 @@
           let foundAny = false;
           FLIPKART_SHEET_NAMES.forEach(name => {
             if (wb.Sheets[name]){
-              sheets[name] = XLSX.utils.sheet_to_json(wb.Sheets[name], { defval: null });
+              // Some Flipkart exports ship with a wrong !ref (e.g. "A1:IV1") that
+              // only covers the header row — sheet_to_json then returns no data rows.
+              // Fix: rebuild !ref from the actual cell addresses present in the sheet.
+              const ws = wb.Sheets[name];
+              const cellKeys = Object.keys(ws).filter(k => !k.startsWith('!'));
+              if (cellKeys.length > 0){
+                const decoded = cellKeys.map(k => XLSX.utils.decode_cell(k));
+                const maxRow = Math.max(...decoded.map(c => c.r));
+                const maxCol = Math.max(...decoded.map(c => c.c));
+                ws['!ref'] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: maxRow, c: maxCol } });
+              }
+              sheets[name] = XLSX.utils.sheet_to_json(ws, { defval: null });
               foundAny = true;
             }
           });
@@ -310,6 +341,29 @@
             return;
           }
           state.files[`${key}-flipkart`] = { fileName: file.name, sheets };
+          zone.classList.add('has-file');
+          zone.querySelector('[data-role="filename"]').textContent = `✓ ${file.name}`;
+          toast(`Loaded ${file.name}`, 'success');
+          updateStep4Availability();
+          return;
+        }
+
+        if (kind === 'amazon'){
+          const sheets = {};
+          let foundAny = false;
+          AMAZON_SHEET_NAMES.forEach(name => {
+            if (wb.Sheets[name]){
+              // Amazon header is at row 4 (index 3) — use range:3
+              // !ref is correct in Amazon files so no override needed
+              sheets[name] = XLSX.utils.sheet_to_json(wb.Sheets[name], { defval: null, range: 3 });
+              foundAny = true;
+            }
+          });
+          if (!foundAny){
+            toast(`${file.name} doesn't look like an Amazon GSTR-1 export — expected sheets like "B2C Small", "HSN Summary"`, 'error');
+            return;
+          }
+          state.files[`${key}-amazon`] = { fileName: file.name, sheets };
           zone.classList.add('has-file');
           zone.querySelector('[data-role="filename"]').textContent = `✓ ${file.name}`;
           toast(`Loaded ${file.name}`, 'success');
@@ -352,8 +406,9 @@
     const allRequiredPresent = state.months.every(({ year, month }) => {
       const key = `${year}-${month}`;
       let ok = true;
-      if (state.platforms.has('meeso')) ok = ok && !!state.files[`${key}-meeso-sales`];
+      if (state.platforms.has('meeso'))    ok = ok && !!state.files[`${key}-meeso-sales`];
       if (state.platforms.has('flipkart')) ok = ok && !!state.files[`${key}-flipkart`];
+      if (state.platforms.has('amazon'))   ok = ok && !!state.files[`${key}-amazon`];
       return ok;
     });
     toStep4Btn.disabled = !allRequiredPresent;
@@ -396,6 +451,20 @@
         }
       });
       platformsInput.flipkart = { sheets: mergedSheets };
+    }
+
+    if (state.platforms.has('amazon')){
+      const mergedSheets = {};
+      AMAZON_SHEET_NAMES.forEach(name => { mergedSheets[name] = []; });
+      state.months.forEach(({ year, month }) => {
+        const entry = state.files[`${year}-${month}-amazon`];
+        if (entry){
+          AMAZON_SHEET_NAMES.forEach(name => {
+            if (entry.sheets[name]) mergedSheets[name] = mergedSheets[name].concat(entry.sheets[name]);
+          });
+        }
+      });
+      platformsInput.amazon = { sheets: mergedSheets };
     }
 
     const result = convertMultiPlatform(platformsInput, { gstin: state.gstin, fp: state.fp });
