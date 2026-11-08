@@ -460,7 +460,7 @@ body{
 }
 .platform-icon{ font-size: 30px; margin-bottom: 4px; }
 .platform-name{
-  color: var(--text-hi);
+  color: white;
   font-family: 'Space Grotesk', sans-serif;
   font-weight: 700;
   font-size: 16px;
@@ -502,6 +502,43 @@ body{
   font-size: 13px;
   color: var(--text-low);
   margin-bottom: 16px;
+}
+
+.shipping-checkbox{
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  cursor: pointer;
+  transition: border-color 0.2s var(--ease);
+}
+.shipping-checkbox:hover{ border-color: var(--violet); }
+.shipping-checkbox input[type="checkbox"]{
+  width: 17px; height: 17px;
+  margin-top: 2px;
+  flex-shrink: 0;
+  accent-color: var(--violet);
+  cursor: pointer;
+}
+.shipping-checkbox-text{
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-mid);
+  line-height: 1.4;
+}
+.shipping-checkbox-text strong{ color: var(--lime); font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+.shipping-checkbox-sub{
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text-low);
+  font-family: 'JetBrains Mono', monospace;
 }
 
 .flipkart-upload-box{

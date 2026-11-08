@@ -9,7 +9,8 @@
     periodType: 'monthly', // 'monthly' | 'quarterly'
     months: [],            // array of { year, month } objects, e.g. [{year:2026, month:5}]
     fp: '',                // final filing period string e.g. "052026" or "062026" for quarter-end
-    platforms: new Set(),  // 'meeso' | 'flipkart'
+    platforms: new Set(),  // 'meeso' | 'flipkart' | 'amazon'
+    meesoIncludeShipping: false,  // whether to add taxable_shipping to Meeso taxable value
     files: {},             // meeso: `${year}-${month}-sales` / `-return` -> {fileName, rows}
                             // flipkart: `${year}-${month}-flipkart` -> {fileName, sheets}
     result: null
@@ -91,7 +92,6 @@
 
   $('#toStep2').addEventListener('click', () => {
     const v = gstinInput.value.trim();
-    $('#showgstnumber').textContent = v;
     if (v.length !== 15){
       toast('GSTIN must be exactly 15 characters', 'error');
       gstinInput.focus();
@@ -207,8 +207,18 @@
 
       if (state.platforms.has('meeso')){
         const key = `${year}-${month}`;
+        // Shipping checkbox only on first month to avoid duplicates
+        const showShippingCheck = (year === state.months[0].year && month === state.months[0].month);
         innerHtml += `
           <div class="platform-section-label"><span class="platform-section-icon">🛍️</span> Meeso</div>
+          ${showShippingCheck ? `
+          <label class="shipping-checkbox">
+            <input type="checkbox" id="meesoShippingCheck" ${state.meesoIncludeShipping ? 'checked' : ''}>
+            <span class="shipping-checkbox-text">
+              <strong>taxable_shipping</strong> ko taxable value mein add karo
+              <span class="shipping-checkbox-sub">By default off — shipping amount taxable value (Sale) mein count nahi hogi</span>
+            </span>
+          </label>` : ''}
           <div class="dropzone-row">
             <div class="dropzone" data-key="${key}" data-kind="meeso-sales">
               <span class="dz-tag">required</span>
@@ -267,6 +277,15 @@
     });
 
     wireDropzones();
+
+    // Wire shipping checkbox (rendered only once, for first month)
+    const shippingCheck = document.getElementById('meesoShippingCheck');
+    if (shippingCheck){
+      shippingCheck.addEventListener('change', () => {
+        state.meesoIncludeShipping = shippingCheck.checked;
+      });
+    }
+
     updateStep4Availability();
   }
 
@@ -432,7 +451,7 @@
         if (salesEntry) allSalesRows = allSalesRows.concat(salesEntry.rows);
         if (returnEntry) allReturnRows = allReturnRows.concat(returnEntry.rows);
       });
-      platformsInput.meeso = { salesRows: allSalesRows, returnRows: allReturnRows };
+      platformsInput.meeso = { salesRows: allSalesRows, returnRows: allReturnRows, includeShipping: state.meesoIncludeShipping };
     }
 
     if (state.platforms.has('flipkart')){

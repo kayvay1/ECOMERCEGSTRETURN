@@ -34,7 +34,7 @@ const STATE_CODE_MAP = {
   'MADHYA PRADESH': '23',
   'GUJARAT': '24',
   'DAMAN AND DIU': '25',
-  'DAMAN': '26', 'THE DADRA AND NAGAR HAVELI AND DAMAN AND DIU': '26', 'DADRA & NAGAR HAVELI AND DAMAN & DIU': '26', 'DADRA AND NAGAR HAVELI': '26',
+  'DAMAN': '26', 'THE DADRA AND NAGAR HAVELI AND DAMAN AND DIU': '26', 'DADRA & NAGAR HAVELI AND DAMAN & DIU': '26', 'DADRA AND NAGAR HAVELI': '26', 'DAMAN & DIU':'26', 'DADRA AND NAGAR HAVELI AND DAMAN AND DIU' : '26', 'DADRA & NAGAR HAVELI & DAMAN & DIU':'26',
   'MAHARASHTRA': '27',
   'KARNATAKA': '29',
   'GOA': '30',
@@ -114,26 +114,27 @@ function getCol(row, ...candidates) {
 // -----------------------------------------------------------
 // MEESO PARSER
 // -----------------------------------------------------------
-function normalizeMeesoRow(raw) {
+function normalizeMeesoRow(raw, includeShipping) {
   const hsn = String(raw.hsn_code ?? '').trim();
   const qty = numOr0(raw.quantity);
   const rate = numOr0(raw.gst_rate);
   const taxableSale = numOr0(raw.total_taxable_sale_value);
-  const taxableShipping = numOr0(raw.taxable_shipping);
+  const taxableShipping = includeShipping ? numOr0(raw.taxable_shipping) : 0;
   const taxval = taxableSale + taxableShipping;
   const stateName = raw.end_customer_state_new;
   const pos = resolvePOS(stateName);
   return { hsn, qty, rate, taxval, pos, stateNameRaw: stateName };
 }
 
-function parseMeeso(salesRows, returnRows) {
+// includeShipping: whether to add taxable_shipping to taxable value (default false)
+function parseMeeso(salesRows, returnRows, includeShipping) {
   const warnings = [];
   const unmapped = new Set();
   const b2csRows = [];
   const hsnRows = [];
 
   const pushRow = (raw, sign) => {
-    const n = normalizeMeesoRow(raw);
+    const n = normalizeMeesoRow(raw, includeShipping);
     if (!n.pos) {
       unmapped.add(n.stateNameRaw || '(blank)');
       return;
@@ -634,7 +635,8 @@ function convertMultiPlatform(platformsInput, meta) {
   const results = [];
 
   if (platformsInput.meeso) {
-    results.push(parseMeeso(platformsInput.meeso.salesRows || [], platformsInput.meeso.returnRows || []));
+    const includeShipping = platformsInput.meeso.includeShipping === true;
+    results.push(parseMeeso(platformsInput.meeso.salesRows || [], platformsInput.meeso.returnRows || [], includeShipping));
   }
   if (platformsInput.flipkart) {
     results.push(parseFlipkart(platformsInput.flipkart.sheets || {}, homeState));
